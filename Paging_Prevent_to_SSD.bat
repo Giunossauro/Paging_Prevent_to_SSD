@@ -2,34 +2,35 @@
 echo --- When beep sounds, reduce ram usage to avoid paging (that decrease SSD lifespan)
 
 setlocal
-set /a freeMem=0
-set /a limitFreeMemInPercent=16
-set /a usedMem=0
+set /a freeRAM=0
+set /a limitFreeRAMInPercent=16
+set /a usedRAM=0
 
 for /F "skip=1" %%M in ('%SystemRoot%\System32\wbem\wmic.exe ComputerSystem get TotalPhysicalMemory') do (
- set totalMem=%%M
- goto puloa
+ set totalRAM=%%M
+ goto puloA
 )
 
-:puloa
+:puloA
 
-FOR /F "usebackq" %%n IN (`powershell -NoProfile -Command %totalMem%/1024`) DO (SET "totalMem=%%n")
+rem This prevents integer 32 overflow of totalMem (note the var is a string)
+FOR /F "usebackq" %%n IN (`powershell -NoProfile -Command %totalRAM%/1024`) DO (SET "totalRAM=%%n")
 
-:teste
+:loop
 for /F "skip=1" %%M in ('%SystemRoot%\System32\wbem\wmic.exe OS get FreePhysicalMemory') do (
- set /a freeMem=%%M
- goto pulob
+ set /a freeRAM=%%M
+ goto puloB
 )
 
-:pulob
+:puloB
 
 set /a usedMem=(%freeMem%*100)/%totalMem%
 
-if %usedMem% LSS %limitFreeMemInPercent% (
+if %usedRAM% LSS %limitFreeRAMInPercent% (
  powershell "[console]::beep(500,1500)"
 )
 
 timeout 7 > NUL
-goto teste
+goto loop
 
 endlocal
